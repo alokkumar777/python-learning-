@@ -12,7 +12,7 @@ class Book:
         self.borrowers = []    # list of member who borrowed book
 
     def __str__(self):
-        return f"Book ID: {self.book_id}, Title: {self.title}, Author: {self.author}, Available: {self.available_copies}/{self.total_copies}"
+        return f"\nBook ID: {self.book_id}, Title: {self.title}, Author: {self.author}, Available: {self.available_copies}/{self.total_copies}"
 
 class Member:
     def __init__(self, member_id: int, name: str, email: str):
@@ -23,14 +23,14 @@ class Member:
         self.fine_amount = 0
 
     def __str__(self):
-        return f"Member ID: {self.member_id}, Name: {self.name}, Email: {self.email}, Book Borrowed: {len(self.borrowed_books)}"
+        return f"\nMember ID: {self.member_id}, Name: {self.name}, Email: {self.email}, Book Borrowed: {len(self.borrowed_books)}"
 
 class BorrowRecord:
     def __init__(self, book: Book, member: Member):
         self.book = book
         self.member = member
         self.borrow_date = datetime.now()
-        self.dur_date = self.borrow_date + timedelta(days=14)  
+        self.due_date = self.borrow_date + timedelta(days=14)  
         self.return_date = None
         self.fine = 0
 
@@ -100,5 +100,43 @@ class Library:
             return 0
 
         borrow_record.return_date = datetime.now()
+        if borrow_record.return_date > borrow_record.due_date:
+            days_late = (borrow_record.return_date - borrow_record.due_date).days
+            fine = days_late * self.daily_fine_rate
+            member.fine_amount += fine
+            borrow_record.fine = fine
+        else:
+            fine = 0
 
-        
+        book.available_copies += 1
+        book.borrowers.remove(member)
+        member.borrowed_books.remove(book)
+
+        return fine
+
+    def pay_fine(self, member_id: int, amount: float) -> float:
+        member = self.find_member(member_id)
+        if not member:
+            return 0
+
+        if amount > member.fine_amount:
+            amount = member.fine_amount
+
+        member.fine_amount -= amount
+        return amount
+
+    def get_member_books(self, member_id: int) -> List[Book]:
+        member = self.find_member(member_id)
+        return member.borrowed_books if member else []
+
+    def get_book_borrowers(self, book_id: int) -> List[Member]:
+        book = self.find_book(book_id)
+        return book.borrowers if book else []
+
+    def get_overdue_books(self) -> List[BorrowRecord]:
+        current_date = datetime.now()
+        return [
+            record for record in self.borrow_records
+            if not record.return_date and current_date > record.due_date
+        ]
+
