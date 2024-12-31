@@ -41,7 +41,7 @@ engine = pyttsx3.init()
 voices = engine.getProperty("voices")
 engine.setProperty("voice", voices[1].id)  # Changed from voices[0] to voices[1]
 engine.setProperty("rate", 150)
-exit_jarvis = False
+exit_lisa = False
 
 
 def speak(audio):
@@ -261,17 +261,28 @@ def get_app(Q):
             speak("Sorry, I can't send the email.")
     # =======
     #   master
-    elif Q == "Take screenshot":
+    elif Q == "take screenshot":
         snapshot = ImageGrab.grab()
-        drive_letter = "C:\\"
-        folder_name = r"downloaded-files"
+        folder_path = os.path.join(os.path.expanduser("~"), "Documents", "downloaded-files")
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
         folder_time = datetime.datetime.now().strftime("%Y-%m-%d_%I-%M-%S_%p")
         extention = ".jpg"
-        folder_to_save_files = drive_letter + folder_name + folder_time + extention
+        file_name = folder_time + extention
+        folder_to_save_files = os.path.join(folder_path, file_name)
         snapshot.save(folder_to_save_files)
+        speak(f"Screenshot saved to {folder_to_save_files}")
+        print(folder_to_save_files)
 
-    elif Q == "Jokes":
-        speak(pyjokes.get_joke())
+    elif Q == "jokes":
+        current_joke = pyjokes.get_joke()
+        if isinstance(current_joke, str):
+            print(current_joke)
+            speak(current_joke)
+        else:
+            print("Error: Joke is not a string")
+            speak("Sorry, I couldn't fetch a joke.")
+
 
     elif Q == "start recording":
         current.add("Win", "Alt", "r")
@@ -286,7 +297,7 @@ def get_app(Q):
         speak("Clipped. check you game bar file for the video")
         with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
             listener.join()
-    elif Q == "take a break":
+    elif Q == "close":
         exit()
     else:
         answer = ask_gpt3(Q)
@@ -311,7 +322,7 @@ def get_app(Q):
 # Call get_app(Query) Func.
 
 if __name__ == "__main__":
-    while not exit_jarvis:
+    while not exit_lisa:
         Query = takecommand().lower()
         get_app(Query)
-    exit_jarvis = True
+    exit_lisa = True
